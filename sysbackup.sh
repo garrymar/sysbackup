@@ -20,6 +20,7 @@ TARGETS="/ /home /usr /var"		# Filesystems to backup
 EXCLUDE="--exclude=/mnt"		# Excluded directoried from backup
 BACKUP_DIR="/backup/server1"		# Full path to directory contining system and mysql subdirs
 BACKUP_TYPE="local"			# Remote or local backup destination (ssh, local)
+COMPRESS_TYPE="gzip"			# Valid values are gzip, bzip2, xz and gpg (for encryption)
 
 # E-mail reports configuration
 MAIL_CMD="/usr/bin/mail"		# Full path to mail process
@@ -30,7 +31,6 @@ REMOTE_USER="sysbackup"			# Remote SSH user
 REMOTE_HOST="192.168.1.1"		# Remote host IP address or hostname
 
 # GPG options
-ENCRYPT="no"				# Use encryption
 GPG_RCPT="recipient@example.com"	# GPG recipient
 
 # SSH options
@@ -44,14 +44,10 @@ DB_NAME[1]="first"			# First database to backup
 DB_NAME[2]="second"			# Second, third, ... database, if required
 
 
+# The code below is not intended for direct modification.
+# Change it only if you are sure it is needed.
 
-###################################################
-#                                                 #
-# Main program beginning. Do not edit below code! #
-#                                                 #
-###################################################
-
-VERSION="0.68"
+VERSION="0.69"
 HOME="/root/"
 PATH="${PATH}:/usr/local/bin:/usr/local/sbin"
 LOCK_FILE=/tmp/sysbackup.lock
@@ -59,13 +55,28 @@ DATE_DOM=`date "+%d"`		# Day of Month
 DATE_DOW=`date "+%A"`		# Day of Week
 BACKUP_FILE="sysbackup-${DATE_DOM}.tar"
 
-if [[ "${ENCRYPT}" == "yes" ]]; then
-  COMPRESSOR="gpg -r ${GPG_RCPT} -e"
-  EXT="gpg"
-else
-  COMPRESSOR="gzip"
-  EXT="gz"
-fi
+# Adapt command and file extension for compression type
+case ${COMPRESS_TYPE} in
+  gpg)
+    COMPRESSOR="gpg -r ${GPG_RCPT} -e"
+    EXT="gpg"
+    ;;
+  bzip2)
+    COMPRESSOR="bzip2"
+    EXT="bz2"
+    ;;
+  xz)
+    COMPRESSOR="xz"
+    EXT="xz"
+    ;;
+  gzip)
+    COMPRESSOR="gzip"
+    EXT="gz"
+    ;;
+  *)
+    echo "Specified compression is not supported. Valid types are: gzip, bzip2, xz and gpg."
+    exit 1
+esac
 
 # Check local or remote file size in MB
 check_size() {
