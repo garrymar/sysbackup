@@ -1,0 +1,25 @@
+sysbackup.sh - is a simple Bash backup script with embedded configuration. It
+uses 'tar' for file system backup and 'mysqldump' for MySQL databases backup.
+It is not mature enough, but I published it in hope that is could be used as a
+basis for one's backup script.
+
+Currently, it supports:
+ - local and remote (over SSH) backup;
+ - GPG encryption;
+ - gzip, bzip2, xz compression types;
+ - E-mail notifications;
+
+To use it you have to create directories 'system' and 'mysql' in BACKUP_DIR.
+The configuration is embedded in the script, so just edit it. The
+configuration is self explanatory.
+
+For remote backup you have to generate SSH keys for root user and import
+public key on remote machine in REMOTE_USER home directory.
+
+For GPG encryption you have to import a public GPG key of a user (GPG_RCPT)
+dedicated for backup decryption operations.
+
+For email notifications, please install mail/mailx utility, if it is not
+installed by default in your distro.
+
+Feel free to contact me (g.djavadyan@gmail.com) if you have any questions.
