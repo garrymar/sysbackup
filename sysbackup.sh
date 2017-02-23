@@ -18,7 +18,7 @@
 
 TARGETS="/ /home /usr /var"		# Filesystems to backup
 EXCLUDE="--exclude=/mnt"		# Excluded directoried from backup
-BACKUP_DIR="/backup/server1"		# Full path to local directory contining system and mysql subdirs
+BACKUP_DIR="/backup/server1"		# Full path to directory contining system and mysql subdirs
 BACKUP_TYPE="local"			# Remote or local backup destination (ssh, local)
 
 # E-mail reports configuration
@@ -28,7 +28,6 @@ CONTACT="recipient@example.com"		# E-mail address to send notification
 # Remote backup configuration
 REMOTE_USER="sysbackup"			# Remote SSH user
 REMOTE_HOST="192.168.1.1"		# Remote host IP address or hostname
-REMOTE_DIR="/backup/server1"		# Full path to remote directory contining system and mysql subdirs
 
 # GPG options
 ENCRYPT="no"				# Use encryption
@@ -62,18 +61,18 @@ BACKUP_FILE="sysbackup-${DATE_DOM}.tar"
 
 if [[ "${ENCRYPT}" == "yes" ]]; then
   COMPRESSOR="gpg -r ${GPG_RCPT} -e"
-  EXTEN="gpg"
+  EXT="gpg"
 else
   COMPRESSOR="gzip"
-  EXTEN="gz"
+  EXT="gz"
 fi
 
 # Check local or remote file size in MB
 check_size() {
     if [ ${BACKUP_TYPE} = "ssh" ]; then
-	ssh -p ${SSH_PORT} ${REMOTE_USER}@${REMOTE_HOST} "du -m ${REMOTE_DIR}/system/${BACKUP_FILE}.${EXTEN}" | cut -f 1
+	ssh -p ${SSH_PORT} ${REMOTE_USER}@${REMOTE_HOST} "du -m ${BACKUP_DIR}/system/${BACKUP_FILE}.${EXT}" | cut -f 1
     else
-	du -m ${BACKUP_DIR}/system/${BACKUP_FILE}.${EXTEN} | cut -f 1
+	du -m ${BACKUP_DIR}/system/${BACKUP_FILE}.${EXT} | cut -f 1
     fi
 }
 
@@ -98,7 +97,7 @@ common() {
     duration=$(( $(date +%s) - $starttime ))
     [ "${2}" = "notify" ] && {
       if [ ${backup_type} = "system" ]; then
-        send_email $(hostname) ${BACKUP_FILE}.${EXTEN} $(check_size) ${duration} ${destination} ${backup_type}
+        send_email $(hostname) ${BACKUP_FILE}.${EXT} $(check_size) ${duration} ${destination} ${backup_type}
       else
         send_email $(hostname) unknown unknown ${duration} ${destination} ${backup_type}
       fi
@@ -113,9 +112,9 @@ system() {
   [ -n "$(which tar)" ] || { echo "Tar archiver is not installed."; return 1; } 
   if [ ${BACKUP_TYPE} = "ssh" ]; then
     tar -cvf - --one-file-system ${EXCLUDE} ${TARGETS} | ${COMPRESSOR} | \
-      ssh -p ${SSH_PORT} ${REMOTE_USER}@${REMOTE_HOST} "cat > ${REMOTE_DIR}/system/${BACKUP_FILE}.${EXTEN}"
+      ssh -p ${SSH_PORT} ${REMOTE_USER}@${REMOTE_HOST} "cat > ${BACKUP_DIR}/system/${BACKUP_FILE}.${EXT}"
   else
-    tar -cvf - --one-file-system ${EXCLUDE} ${TARGETS} | ${COMPRESSOR} > ${BACKUP_DIR}/system/${BACKUP_FILE}.${EXTEN}
+    tar -cvf - --one-file-system ${EXCLUDE} ${TARGETS} | ${COMPRESSOR} > ${BACKUP_DIR}/system/${BACKUP_FILE}.${EXT}
   fi
 }
 
@@ -124,11 +123,11 @@ mysql() {
   if [ ${BACKUP_TYPE} = "ssh" ]; then
     for i in ${DB_NAME[@]}; do
       mysqldump ${DB_OPTS} -u ${DB_USER} -p${DB_PASS} ${i} | ${COMPRESSOR} | \
-        ssh -p ${SSH_PORT} ${REMOTE_USER}@${REMOTE_HOST} "cat > ${REMOTE_DIR}/mysql/${i}-${DATE_DOW}.sql.${EXTEN}"
+        ssh -p ${SSH_PORT} ${REMOTE_USER}@${REMOTE_HOST} "cat > ${BACKUP_DIR}/mysql/${i}-${DATE_DOW}.sql.${EXT}"
     done
   else
     for i in ${DB_NAME[@]}; do
-      mysqldump ${DB_OPTS} -u ${DB_USER} -p${DB_PASS} ${i} | ${COMPRESSOR} > ${BACKUP_DIR}/mysql/${i}-${DATE_DOW}.sql.${EXTEN}
+      mysqldump ${DB_OPTS} -u ${DB_USER} -p${DB_PASS} ${i} | ${COMPRESSOR} > ${BACKUP_DIR}/mysql/${i}-${DATE_DOW}.sql.${EXT}
     done
   fi
 }
