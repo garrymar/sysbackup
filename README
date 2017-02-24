@@ -1,7 +1,7 @@
 sysbackup.sh - is a simple Bash backup script with embedded configuration. It
 uses 'tar' for file system backup and 'mysqldump' for MySQL databases backup.
 It is not mature enough, but I published it in hope that is could be used as a
-basis for one's backup script.
+basis for one's own backup script.
 
 Currently, it supports:
  - local and remote (over SSH) backup;
@@ -13,13 +13,48 @@ To use it you have to create directories 'system' and 'mysql' in BACKUP_DIR.
 The configuration is embedded in the script, so just edit it. The
 configuration is self explanatory.
 
-For remote backup you have to generate SSH keys for root user and import
-public key on remote machine in REMOTE_USER home directory.
+For remote backup you have to generate SSH keys for root user and import the
+generated public key on remote machine in REMOTE_USER home directory.
 
 For GPG encryption you have to import a public GPG key of a user (GPG_RCPT)
 dedicated for backup decryption operations.
 
 For email notifications, please install mail/mailx utility, if it is not
 installed by default in your distro.
+
+
+Invocation:
+
+Create file system backup and optionally send e-mail notification:
+./sysbackup.sh system [notify]
+
+Create MySQL backup and optionally send e-mail notification:
+./sysbackup.sh mysql [notify]
+
+
+By default, system backup uses following file name format:
+sysbackup-[day of month].tar.[compression-dependant extension]
+
+and for MySQL backup the format is:
+[database name]-[day of week].sql.[compression-dependant extension]
+
+For example, 'sysbackup-3.tar.gz' for gzip-compressed system backup, 
+initiated on 3rd day of month, and 'mydb-Friday.sql.gpg' for GPG encrypted
+MySQL database with name 'mydb' created on Friday.
+
+
+The default naming format permits simple backup rotation without external
+rotation software involvement.
+
+For example, you can setup cron using following method:
+
+0 2 3,10,17,24	* * root /path/to/sysbackup.sh system notify >/dev/null 2>&1
+0 3 *		* * root /path/to/sysbackup.sh mysql notify >/dev/null 2>&1
+
+where system backup will be created each week, four times per month,
+automatically overwriting the oldest one. And MySQL backup will be created
+every day, overwriting an archive with more than one week age. At any time
+you will have four lastest system backups and seven lastest database backups.
+
 
 Feel free to contact me (g.djavadyan@gmail.com) if you have any questions.
