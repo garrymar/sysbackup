@@ -17,7 +17,7 @@
 
 
 TARGETS="/ /home /usr /var"		# Filesystems to backup
-EXCLUDE="--exclude=/mnt"		# Excluded directoried from backup
+EXCLUDE="--exclude=/mnt"		# Excluded directories from backup
 BACKUP_DIR="/backup/server1"		# Full path to directory contining system and mysql subdirs
 BACKUP_TYPE="local"			# Remote or local backup destination (ssh, local)
 COMPRESS_TYPE="gzip"			# Valid values are gzip, bzip2, xz and gpg (for encryption)
@@ -29,12 +29,10 @@ CONTACT="recipient@example.com"		# E-mail address to send notification
 # Remote backup configuration
 REMOTE_USER="sysbackup"			# Remote SSH user
 REMOTE_HOST="192.168.1.1"		# Remote host IP address or hostname
+REMOTE_PORT="22"			# SSH port used to connect to remote backup service
 
 # GPG options
 GPG_RCPT="recipient@example.com"	# GPG recipient
-
-# SSH options
-SSH_PORT="22"				# SSH port used to connect to remote backup service
 
 # MySQL backup configuration
 DB_OPTS="--single-transaction"		# Options for mysqldump
@@ -81,7 +79,7 @@ esac
 # Check local or remote file size in MB
 check_size() {
     if [ ${BACKUP_TYPE} = "ssh" ]; then
-	ssh -p ${SSH_PORT} ${REMOTE_USER}@${REMOTE_HOST} "du -m ${BACKUP_DIR}/system/${BACKUP_FILE}.${EXT}" | cut -f 1
+	ssh -p ${REMOTE_PORT} ${REMOTE_USER}@${REMOTE_HOST} "du -m ${BACKUP_DIR}/system/${BACKUP_FILE}.${EXT}" | cut -f 1
     else
 	du -m ${BACKUP_DIR}/system/${BACKUP_FILE}.${EXT} | cut -f 1
     fi
@@ -123,7 +121,7 @@ system() {
   [ -n "$(which tar)" ] || { echo "Tar archiver is not installed."; return 1; } 
   if [ ${BACKUP_TYPE} = "ssh" ]; then
     tar -cvf - --one-file-system ${EXCLUDE} ${TARGETS} | ${COMPRESSOR} | \
-      ssh -p ${SSH_PORT} ${REMOTE_USER}@${REMOTE_HOST} "cat > ${BACKUP_DIR}/system/${BACKUP_FILE}.${EXT}"
+      ssh -p ${REMOTE_PORT} ${REMOTE_USER}@${REMOTE_HOST} "cat > ${BACKUP_DIR}/system/${BACKUP_FILE}.${EXT}"
   else
     tar -cvf - --one-file-system ${EXCLUDE} ${TARGETS} | ${COMPRESSOR} > ${BACKUP_DIR}/system/${BACKUP_FILE}.${EXT}
   fi
@@ -134,7 +132,7 @@ mysql() {
   if [ ${BACKUP_TYPE} = "ssh" ]; then
     for i in ${DB_NAME[@]}; do
       mysqldump ${DB_OPTS} -u ${DB_USER} -p${DB_PASS} ${i} | ${COMPRESSOR} | \
-        ssh -p ${SSH_PORT} ${REMOTE_USER}@${REMOTE_HOST} "cat > ${BACKUP_DIR}/mysql/${i}-${DATE_DOW}.sql.${EXT}"
+        ssh -p ${REMOTE_PORT} ${REMOTE_USER}@${REMOTE_HOST} "cat > ${BACKUP_DIR}/mysql/${i}-${DATE_DOW}.sql.${EXT}"
     done
   else
     for i in ${DB_NAME[@]}; do
