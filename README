@@ -1,5 +1,5 @@
 sysbackup.sh - is a simple Bash backup script with embedded configuration. It
-uses 'tar' for file system backup and 'mysqldump' for MySQL databases backup.
+uses 'tar' for filesystem backup and 'mysqldump' for MySQL databases backup.
 It is not mature enough, but I published it in hope that is could be used as a
 basis for one's own backup script.
 
@@ -8,6 +8,7 @@ Currently, it supports:
  - GPG encryption;
  - gzip, bzip2, xz compression types;
  - E-mail notifications;
+ - Date format specification
 
 To use it you have to create directories 'system' and 'mysql' in BACKUP_DIR.
 The configuration is embedded in the script, so just edit it. The
@@ -25,18 +26,34 @@ installed by default in your distro.
 
 Invocation:
 
+./sysbackup.sh [--type=system|mysql] [--notify=yes|no] [--dateformat=weekday|monthday|month]
+
+where:
+
+--type - backup type, 'system' (default) or 'mysql'
+--notify - send email notification ('yes') or don't send ('no', default)
+--dateformat - date format used to construct filename:
+    weekday - day of week (Monday, Tuesday, ...);
+    monthday - day of month (1, 5, 28, ...), default;
+    month - month name (January, December, ...)
+
+Allow the arguments are optional, for defaults see invocation.
+
+
+Example:
+
 Create file system backup and optionally send e-mail notification:
-./sysbackup.sh system [notify]
+./sysbackup.sh --notify=yes
 
 Create MySQL backup and optionally send e-mail notification:
-./sysbackup.sh mysql [notify]
+./sysbackup.sh --type=mysql --notify=yes --dateformat=weekday
 
 
 By default, system backup uses following file name format:
-sysbackup-[day of month].tar.[compression-dependant extension]
+sysbackup-[dateformat].tar.[compression-dependant extension]
 
 and for MySQL backup the format is:
-[database name]-[day of week].sql.[compression-dependant extension]
+[database_name]-[dateformat].sql.[compression-dependant extension]
 
 For example, 'sysbackup-3.tar.gz' for gzip-compressed system backup, 
 initiated on 3rd day of month, and 'mydb-Friday.sql.gpg' for GPG encrypted
@@ -48,8 +65,9 @@ rotation software involvement.
 
 For example, you can setup cron using following method:
 
-0 2 3,10,17,24	* * root /path/to/sysbackup.sh system notify >/dev/null 2>&1
-0 3 *		* * root /path/to/sysbackup.sh mysql notify >/dev/null 2>&1
+0 2 3,10,17,24	* * root /path/to/sysbackup.sh --notify=yes >/dev/null 2>&1
+0 3 *		* * root /path/to/sysbackup.sh --type=mysql \
+				--dateformat=weekday >/dev/null 2>&1
 
 where system backup will be created each week, four times per month,
 automatically overwriting the oldest one. And MySQL backup will be created
