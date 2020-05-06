@@ -92,10 +92,10 @@ main() {
 system() {
   [ -n "$(which tar)" ] || { echo "Tar archiver is not installed."; return 1; } 
   if [ ${BACKUP_DST} = "remote" ]; then
-    tar -cvf - --one-file-system ${EXCLUDE} ${TARGETS} | ${COMPRESSOR} | \
+    tar -cvf - --one-file-system --xattrs --xattrs-include='*.*' ${EXCLUDE} ${TARGETS} | ${COMPRESSOR} | \
       ssh -p ${REMOTE_PORT} ${REMOTE_USER}@${REMOTE_HOST} "cat > ${BACKUP_DIR}/system/${BACKUP_FILE}.${EXT}"
   else
-    tar -cvf - --one-file-system ${EXCLUDE} ${TARGETS} | ${COMPRESSOR} > ${BACKUP_DIR}/system/${BACKUP_FILE}.${EXT}
+    tar -cvf - --one-file-system --xattrs --xattrs-include='*.*' ${EXCLUDE} ${TARGETS} | ${COMPRESSOR} > ${BACKUP_DIR}/system/${BACKUP_FILE}.${EXT}
   fi
 }
 
