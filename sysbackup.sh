@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright (c) 2017 Garri Djavadyan
+# Copyright (c) 2020 Garri Djavadyan
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -41,12 +41,16 @@ DB_PASS="password"			# Password for that user
 DB_NAME[1]="first"			# First database to backup
 DB_NAME[2]="second"			# Second, third, ... database, if required
 
+# Postgresql backup config
+PG_USER="postgres"
+PG_DB_NAME[1]="first"
+PG_DB_NAME[2]="second"
 
 # The code below is not intended for direct modification.
 # Change it only if you are sure it is needed.
 
 print_usage() {
-  echo "Usage: $0 [--type=system|mysql] [--notify=yes|no] [--dateformat=weekday|monthday|month]"
+  echo "Usage: $0 [--type=system|mysql|pgsql] [--notify=yes|no] [--dateformat=weekday|monthday|month]"
   exit 1
 }
 
@@ -113,6 +117,20 @@ mysql() {
   fi
 }
 
+pgsql() {
+  [ -n "$(which pg_dump)" ] || { echo "pg_dump is not installed."; return 1; }
+  if [ ${BACKUP_DST} = "remote" ]; then
+    for i in ${PG_DB_NAME[@]}; do
+      sudo -iu ${PG_USER} pg_dump $i | ${COMPRESSOR} | \
+        ssh -p ${REMOTE_PORT} ${REMOTE_USER}@${REMOTE_HOST} "cat > ${BACKUP_DIR}/pgsql/${i}-${DATEFORMAT}.sql.${EXT}"
+    done
+  else
+    for i in ${DB_NAME[@]}; do
+      sudo -iu ${PG_USER} pg_dump $i | ${COMPRESSOR} > ${BACKUP_DIR}/pgsql/${i}-${DATEFORMAT}.sql.${EXT}
+    done
+  fi
+}
+
 
 # Parse CLI options
 for CMD_ARG; do
@@ -122,6 +140,9 @@ for CMD_ARG; do
       ;;
     --type=mysql)
       BACKUP_TYPE="mysql"
+      ;;
+    --type=pgsql)
+      BACKUP_TYPE="pgsql"
       ;;
     --type=*)
       echo "Specified backup type is not supported. Using default 'system'."
@@ -149,7 +170,7 @@ done
 
 
 # Set defaults
-VERSION="0.70"
+VERSION="0.72"
 HOME="/root/"
 PATH="${PATH}:/usr/local/bin:/usr/local/sbin"
 LOCK_FILE=/tmp/sysbackup.lock

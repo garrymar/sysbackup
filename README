@@ -26,11 +26,11 @@ installed by default in your distro.
 
 Invocation:
 
-./sysbackup.sh [--type=system|mysql] [--notify=yes|no] [--dateformat=weekday|monthday|month]
+./sysbackup.sh [--type=system|mysql|pgsql] [--notify=yes|no] [--dateformat=weekday|monthday|month]
 
 where:
 
---type - backup type, 'system' (default) or 'mysql'
+--type - backup type, 'system' (default), 'mysql', 'pgsql' (PostgreSQL)
 --notify - send email notification ('yes') or don't send ('no', default)
 --dateformat - date format used to construct filename:
     weekday - day of week (Monday, Tuesday, ...);
