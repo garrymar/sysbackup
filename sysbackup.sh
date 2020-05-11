@@ -17,7 +17,7 @@
 
 
 TARGETS="/ /home /usr /var"		# Filesystems to backup
-EXCLUDE="--exclude=/mnt"		# Excluded directories from backup
+EXCLUDE[1]="/mnt"			# First exclude expression. See tar(1) for details.
 BACKUP_DIR="/backup/server1"		# Full path to directory contining system and mysql subdirs
 BACKUP_DST="local"			# Backup destination (local, remote)
 COMPRESS_TYPE="gzip"			# Valid values are gzip, bzip2, xz and gpg (for encryption)
@@ -96,10 +96,11 @@ main() {
 system() {
   [ -n "$(which tar)" ] || { echo "Tar archiver is not installed."; return 1; } 
   if [ ${BACKUP_DST} = "remote" ]; then
-    tar -cvf - --one-file-system --xattrs --xattrs-include='*.*' ${EXCLUDE} ${TARGETS} | ${COMPRESSOR} | \
+    tar -cvf - --one-file-system --xattrs --xattrs-include='*.*' ${EXCLUDE[@]} ${TARGETS} | ${COMPRESSOR} | \
       ssh -p ${REMOTE_PORT} ${REMOTE_USER}@${REMOTE_HOST} "cat > ${BACKUP_DIR}/system/${BACKUP_FILE}.${EXT}"
   else
-    tar -cvf - --one-file-system --xattrs --xattrs-include='*.*' ${EXCLUDE} ${TARGETS} | ${COMPRESSOR} > ${BACKUP_DIR}/system/${BACKUP_FILE}.${EXT}
+    tar -cvf - --one-file-system --xattrs --xattrs-include='*.*' ${EXCLUDE[@]} ${TARGETS} | \
+    ${COMPRESSOR} > ${BACKUP_DIR}/system/${BACKUP_FILE}.${EXT}
   fi
 }
 
@@ -170,7 +171,7 @@ done
 
 
 # Set defaults
-VERSION="0.72"
+VERSION="0.73"
 HOME="/root/"
 PATH="${PATH}:/usr/local/bin:/usr/local/sbin"
 LOCK_FILE=/tmp/sysbackup.lock
@@ -201,6 +202,13 @@ case ${COMPRESS_TYPE} in
     echo "Specified compression is not supported. Valid types are: gzip, bzip2, xz and gpg."
     exit 1
 esac
+
+# Aggregate --exclude expressions
+if [[ ${#EXCLUDE[@]} -gt 0 ]]; then
+  for (( i=1; i<=${#EXCLUDE[@]}; i++)); do
+    EXCLUDE[$i]="--exclude=${EXCLUDE[$i]}"
+  done
+fi
 
 # Call main function
 main
