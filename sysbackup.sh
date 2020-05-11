@@ -151,6 +151,9 @@ for CMD_ARG; do
     --notify=yes)
       NOTIFY="yes"
       ;;
+    --notify=no)
+      NOTIFY="no"
+      ;;
     --dateformat=weekday)
       DATEFORMAT=$(date +%A)
       ;;
