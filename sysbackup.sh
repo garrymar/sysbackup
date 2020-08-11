@@ -32,7 +32,8 @@ REMOTE_HOST="192.168.1.1"		# Remote host IP address or hostname
 REMOTE_PORT="22"			# SSH port used to connect to remote backup service
 
 # GPG options
-GPG_RCPT="recipient@example.com"	# GPG recipient
+GPG_RCPT[1]="recipient1@example.com"	# First GPG recipient
+#GPG_RCPT[2]="recipient2@example.com"
 
 # MySQL backup configuration
 DB_OPTS="--single-transaction"		# Options for mysqldump
@@ -183,10 +184,17 @@ NOTIFY=${NOTIFY:-"no"}
 DATEFORMAT=${DATEFORMAT:-$(date +%d)}
 BACKUP_FILE="sysbackup-${DATEFORMAT}.tar"
 
+# Form a string of GPG recepients
+if [[ ${#GPG_RCPT[@]} -gt 0 ]]; then
+  for (( i=1; i<=${#GPG_RCPT[@]}; i++)); do
+    GPG_RCPT[$i]="-r ${GPG_RCPT[$i]}"
+  done
+fi
+
 # Adapt command and file extension for compression type
 case ${COMPRESS_TYPE} in
   gpg)
-    COMPRESSOR="gpg -r ${GPG_RCPT} -e"
+    COMPRESSOR="gpg ${GPG_RCPT[@]} -e"
     EXT="gpg"
     ;;
   bzip2)
